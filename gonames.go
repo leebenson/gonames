@@ -79,7 +79,7 @@ func doFormat(in string) (out string) {
 			// Mc*, O'*
 			for _, pattern := range []string{`^(Mc)(.+)$`, `^(O\')(.+)$`} {
 				r := regexp.MustCompile(pattern)
-				if m := r.FindAllStringSubmatch(word, -1); len(m) > 0 {
+				if m := r.FindAllStringSubmatch(word, -1); m != nil {
 
 					word = func(matches [][]string) (word string) {
 
