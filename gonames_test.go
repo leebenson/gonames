@@ -67,6 +67,20 @@ var nameSet = map[string]map[string]string{
 		"expectedLast":  "Smith-McDonald-O'Toole-O'Leary",
 		"expectedFull":  "Rebecca Smith-McDonald-O'Toole-O'Leary",
 	},
+
+	// O'*-*
+	"lee o'brian-keith": map[string]string{
+		"expectedFirst": "Lee",
+		"expectedLast":  "O'Brian-Keith",
+		"expectedFull":  "Lee O'Brian-Keith",
+	},
+
+	// O'*-Mc*
+	"theodore o'brian-mcdonald": map[string]string{
+		"expectedFirst": "Theodore",
+		"expectedLast":  "O'Brian-McDonald",
+		"expectedFull":  "Theodore O'Brian-McDonald",
+	},
 }
 
 func TestNames(t *testing.T) {
@@ -77,7 +91,7 @@ func TestNames(t *testing.T) {
 	for name, options := range nameSet {
 		result := New(name)
 
-		t.Log("Testing " + name + "... (" + result.GetName() + ")")
+		// t.Log("Testing " + name + "... (" + result.GetName() + ")")
 
 		// First name
 		if result.GetFirstName() != options["expectedFirst"] {

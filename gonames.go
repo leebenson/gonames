@@ -6,60 +6,6 @@ import (
 	"strings"
 )
 
-var (
-
-	// The order of RegEx matters!  Make sure the rules of
-	// one doesn't invalidate the other...
-
-	nameRegex = []map[string]func([][]string) string{
-
-		{
-			// Basic word boundary -- i.e. Dashes
-			`[\w\']+`: func(matches [][]string) (word string) {
-
-				// fmt.Printf("Dashes: %#v", matches)
-
-				// Bypass the dashes
-				for _, match := range matches {
-					word += ucFirst(match[0]) + "-"
-				}
-
-				// Remove the final dash
-				return strings.TrimRight(word, "-")
-			},
-		},
-		{
-			// Mc* (e.g. McDonald, McDowell)
-			`^(.*)?(Mc)(.+)`: func(matches [][]string) (word string) {
-
-				// fmt.Printf("Mc: %#v", matches)
-
-				for i := 1; i < len(matches[0]); i++ {
-					word += ucFirst(matches[0][i])
-				}
-
-				return strings.TrimSpace(word)
-			},
-		},
-		{
-
-			// O'* (e.g. O'Brian, O'Toole)
-			`(?U)([^\']*)(O\')(\w+)\b+`: func(matches [][]string) (word string) {
-
-				// fmt.Printf("O': %#v", matches)
-
-				for _, match := range matches {
-					for i := 1; i < len(match); i++ {
-						word += ucFirst(match[i])
-					}
-				}
-
-				return strings.TrimSpace(word)
-			},
-		},
-	}
-)
-
 type NameMap map[string]string
 
 func (n NameMap) GetFirstName() string {
@@ -122,50 +68,60 @@ func ucFirst(word string) (out string) {
 
 func doFormat(in string) (out string) {
 
-	for _, word := range regexp.MustCompile(`[^\w-\']`).Split(in, -1) {
+	r := regexp.MustCompile(`[\w\']+-?`)
 
-		// Always capital first letter, regardless
-		word = ucFirst(word)
+	for _, matches := range r.FindAllStringSubmatch(in, -1) {
+		for _, word := range matches {
 
-		for _, rule := range nameRegex {
-			for pattern, matchFunc := range rule {
+			// Uppercase the first letter, regardless
+			word = ucFirst(word)
+
+			// Mc*, O'*
+			for _, pattern := range []string{`^(Mc)(.+)$`, `^(O\')(.+)$`} {
 				r := regexp.MustCompile(pattern)
 				if m := r.FindAllStringSubmatch(word, -1); len(m) > 0 {
-					word = matchFunc(m)
+
+					word = func(matches [][]string) (word string) {
+
+						// fmt.Printf("O': %#v", matches)
+
+						for _, match := range matches {
+							for i := 1; i < len(match); i++ {
+								word += ucFirst(match[i])
+							}
+						}
+
+						return strings.TrimSpace(word)
+					}(m)
 				}
 			}
+
+			out += word + " "
 		}
-
-		// Add the word to the output, plus a space
-		out += word + " "
-
 	}
 
-	// Remove the final spaces
-	return strings.TrimSpace(out)
-
+	// Glue back any dashes, and trim the fat
+	return strings.TrimSpace(strings.Replace(out, "- ", "-", -1))
 }
 
-func formatNames(names *NameMap) *NameMap {
-
-	deref := *names
+func formatNames(names NameMap) *NameMap {
 
 	if names.GetFirstName() != "" {
-		deref["firstName"] = doFormat(deref["firstName"])
+		names["firstName"] = doFormat(names["firstName"])
 	}
 
 	if names.GetLastName() != "" {
-		deref["lastName"] = doFormat(deref["lastName"])
+		names["lastName"] = doFormat(names["lastName"])
 	}
 
-	return names
+	return &names
 
 }
 
 func New(name string) (names *NameMap) {
 
 	names = createMap(removeSpaces(name))
-	formatNames(names)
+	formatNames(*names)
 
 	return names
 }
