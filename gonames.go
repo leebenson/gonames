@@ -6,24 +6,31 @@ import (
 	"strings"
 )
 
-type NameMap map[string]string
-
-func (n NameMap) GetFirstName() string {
-	if _, ok := n["firstName"]; ok {
-		return n["firstName"]
-	}
-	return ""
+type NameMap struct {
+	firstName string
+	lastName  string
 }
 
-func (n NameMap) GetLastName() string {
-	if _, ok := n["lastName"]; ok {
-		return n["lastName"]
-	}
-	return ""
+func (n *NameMap) GetFirstName() string {
+	return n.firstName
 }
 
-func (n NameMap) GetName() string {
-	return strings.TrimSpace(n.GetFirstName() + " " + n.GetLastName())
+func (n *NameMap) GetLastName() string {
+	return n.lastName
+}
+
+func (n *NameMap) GetName() string {
+	return strings.TrimSpace(n.firstName + " " + n.lastName)
+}
+
+func (n *NameMap) SetFirstName(name string) *NameMap {
+	n.firstName = doFormat(name)
+	return n
+}
+
+func (n *NameMap) SetLastName(name string) *NameMap {
+	n.lastName = doFormat(name)
+	return n
 }
 
 func removeSpaces(name string) (result string) {
@@ -35,24 +42,6 @@ func removeSpaces(name string) (result string) {
 	}
 
 	return strings.TrimSpace(result)
-}
-
-func createMap(in string) *NameMap {
-
-	newMap := make(NameMap)
-
-	names := strings.Split(in, " ")
-
-	switch len(names) {
-	case 1:
-		newMap["firstName"] = strings.Join(names, " ")
-
-	default:
-		newMap["firstName"] = strings.Join(names[:len(names)-1], " ")
-		newMap["lastName"] = strings.Join(names[len(names)-1:], "")
-	}
-
-	return &newMap
 }
 
 func ucFirst(word string) (out string) {
@@ -83,8 +72,6 @@ func doFormat(in string) (out string) {
 
 					word = func(matches [][]string) (word string) {
 
-						// fmt.Printf("O': %#v", matches)
-
 						for _, match := range matches {
 							for i := 1; i < len(match); i++ {
 								word += ucFirst(match[i])
@@ -104,24 +91,6 @@ func doFormat(in string) (out string) {
 	return strings.TrimSpace(strings.Replace(out, "- ", "-", -1))
 }
 
-func formatNames(names NameMap) *NameMap {
-
-	if names.GetFirstName() != "" {
-		names["firstName"] = doFormat(names["firstName"])
-	}
-
-	if names.GetLastName() != "" {
-		names["lastName"] = doFormat(names["lastName"])
-	}
-
-	return &names
-
-}
-
-func New(name string) (names *NameMap) {
-
-	names = createMap(removeSpaces(name))
-	formatNames(*names)
-
-	return names
+func New() (names *NameMap) {
+	return new(NameMap)
 }
